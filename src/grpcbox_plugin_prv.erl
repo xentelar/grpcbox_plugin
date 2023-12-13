@@ -101,7 +101,7 @@ compile_pb(Filename, OutDir, BeamOutDir, GpbOpts) ->
             case gpb_compile:file(Filename, [{rename,{msg_name,snake_case}},
                                              {rename,{msg_fqname,base_name}},
                                              use_packages, maps,
-                                             strings_as_binaries, {i, "."},
+                                             strings_as_binaries, {i, "./protos/services"},
                                              {report_errors, false},
                                              {o, OutDir} | GpbOpts]) of
                 ok ->
