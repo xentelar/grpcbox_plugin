@@ -2,18 +2,38 @@
 
 -export([init/1, do/1, format_error/1]).
 
--include_lib("providers/include/providers.hrl").
+-define(PRV_ERROR(Reason),
+        {error, {?MODULE, Reason}}).
 
 -define(PROVIDER, gen).
 -define(NAMESPACE, grpc).
 -define(DEPS, [{default, app_discovery}]).
+
+%%%===================================================================
+%%% Types
+%%%===================================================================
+
+-record(provider,  { name              :: atom(),               % The 'user friendly' name of the task
+                     module            :: module(),             % The module implementation of the task
+                     hooks             :: {list(), list()},
+                     bare              :: boolean(),            % Indicates whether task can be run by user
+                     deps              :: [atom()],             % The list of dependencies
+                     desc              :: string(),             % The description for the task
+                     short_desc        :: string(),             % A one line short description of the task
+                     example           :: string() | undefined, % An example of the task usage
+                     opts              :: list(),               % The list of options that the task requires/understands
+                     profiles          :: [atom()],               % Profile to use for provider
+                     namespace=default :: atom()                % namespace the provider is registered in
+                   }).
+
+-type t() :: #provider{}.
 
 %% ===================================================================
 %% Public API
 %% ===================================================================
 -spec init(rebar_state:t()) -> {ok, rebar_state:t()}.
 init(State) ->
-    Provider = providers:create(
+    Provider = create(
                  [{name, ?PROVIDER},            % The 'user friendly' name of the task
                   {namespace, ?NAMESPACE},
                   {module, ?MODULE},            % The module implementation of the task
@@ -209,3 +229,17 @@ log_warnings(Warnings) ->
          rebar_api:warn("Warning building ~s~n", [File]),
          [rebar_api:warn("        ~p: ~s", [Line, M:format_error(E)]) || {Line, M, E} <- Es]
      end || {File, Es} <- Warnings].
+
+-spec create(list()) -> t().
+create(Attrs) ->
+    #provider{ name          = proplists:get_value(name, Attrs, undefined)
+             , module        = proplists:get_value(module, Attrs, undefined)
+             , hooks         = proplists:get_value(hooks, Attrs, {[], []})
+             , bare          = proplists:get_value(bare, Attrs, true)
+             , deps          = proplists:get_value(deps, Attrs, [])
+             , desc          = proplists:get_value(desc, Attrs, "")
+             , short_desc    = proplists:get_value(short_desc, Attrs, "")
+             , example       = proplists:get_value(example, Attrs, "")
+             , opts          = proplists:get_value(opts, Attrs, [])
+             , profiles      = proplists:get_value(profiles, Attrs, [default])
+             , namespace     = proplists:get_value(namespace, Attrs, default) }.
